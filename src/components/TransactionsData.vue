@@ -1,0 +1,11 @@
+<template>
+    <div>
+        Tulot
+    </div>
+    <div>
+        Menot
+    </div>
+    <div>
+        Yhteensä
+    </div>
+</template>
