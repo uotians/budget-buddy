@@ -17,7 +17,7 @@ let db = new sqlite3.Database('./database/budgetbuddy.db')
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS transactions (
         id INTEGER PRIMARY KEY,
-        date TEXT,
+        date DATE,
         recipient_or_payer TEXT,
         definition TEXT,
         reference TEXT,
@@ -103,6 +103,37 @@ app.post('/addtocategory', express.json(), (req, res) => {
     })
 })
 
+app.get('/gettotals', express.json(), (req, res) => {
+
+    let sql = `SELECT 
+                    SUM(CASE WHEN Amount > 0 THEN Amount ELSE 0 END) AS Tulot,
+                    SUM(CASE WHEN Amount < 0 THEN Amount ELSE 0 END) AS Menot
+                FROM transactions`
+    db.all(sql, function(err, rows) {
+        if (err) {
+            return console.log(err.message)
+        }
+        res.json({ rows })
+    })
+})
+
+app.post('/gettotals', express.json(), (req, res) =>{
+    console.log(req.body.date)
+    var startDate = req.body.date[0]
+    var endDate = req.body.date[1]
+    let sql = `SELECT 
+                    SUM(CASE WHEN Amount > 0 THEN Amount ELSE 0 END) AS Tulot,
+                    SUM(CASE WHEN Amount < 0 THEN Amount ELSE 0 END) AS Menot
+                FROM transactions
+                WHERE date BETWEEN ? AND ?`
+    db.all(sql, [startDate, endDate], function(err, rows) {
+        if (err) {
+            return console.log(err.message)
+        }
+        res.json({ rows })
+    })
+})
+
 app.listen(port, () => {
     console.log(`Server listening at http://localhost:${port}`)
 })
@@ -119,9 +150,14 @@ async function saveFileToDatabase(data) {
         }
         let sql = 'INSERT INTO transactions(date, recipient_or_payer, reference, definition, amount, category) VALUES(?,?,?,?,?,?)'
 
+        info[0] = convertToSqlDateFormat(info[0])
+
         if (info[1] == "") {
             info[1] = info[2]
         }
+
+        info[3] = info[3].replace("'", "")
+        info[4] = info[4].replace(",", ".")
         
         info[5] = null
         let element = existing.find(element => element.recipient_or_payer === info[1])
@@ -156,4 +192,18 @@ async function fetchExistingCategories() {
             }
         })
     }) 
+}
+
+function convertToSqlDateFormat(inputDate) {
+    const dateParts = inputDate.split(".");
+    const formattedDate = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`);
+    const year = formattedDate.getFullYear();
+    let month = formattedDate.getMonth() + 1;
+    let day = formattedDate.getDate();
+
+    // Pad month and day with zeros if they are single digits
+    month = month < 10 ? '0' + month : month;
+    day = day < 10 ? '0' + day : day;
+
+    return `${year}-${month}-${day}`;
 }
