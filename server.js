@@ -134,6 +134,27 @@ app.post('/gettotals', express.json(), (req, res) =>{
     })
 })
 
+app.post('/gettotalsbycategory', express.json(), (req, res) =>{
+    console.log(req.body.date)
+    var startDate = req.body.date[0]
+    var endDate = req.body.date[1]
+    let sql = `SELECT 
+                    category,
+                    sum(amount) as total 
+                FROM transactions
+                WHERE category IS NOT NULL AND
+                      date BETWEEN ? AND ?
+                GROUP BY category
+                ORDER BY SUM(ABS(amount)) DESC`
+    db.all(sql, [startDate, endDate], function(err, rows) {
+        if (err) {
+            return console.log(err.message)
+        }
+        console.log(rows)
+        res.json({ rows })
+    })
+})
+
 app.listen(port, () => {
     console.log(`Server listening at http://localhost:${port}`)
 })

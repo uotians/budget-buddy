@@ -1,7 +1,7 @@
 <template>
   <div v-if="transactions">
-    <table>
-      <h5>Transactions</h5>
+    <h5 style="place-items: center;">Transactions</h5>
+    <table style="place-items: center;">
       <tr v-for="transaction in transactions.rows" :key="transaction.id">
         <td>{{ transaction.date }}</td>
         <td>{{ transaction.recipient_or_payer }}</td>

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="result">
+  <div v-if="totals">
     <div>
       <date-picker
         v-model="dateRange"
@@ -11,7 +11,7 @@
       <button @click="sendDate">Päivitä</button>
     </div>
 
-    <div>
+    <div class="totalAll">
       <b-table-simple>
         <b-tbody>
           <b-tr>
@@ -20,9 +20,30 @@
             <b-td class="font-weight-bold">Yhteensä</b-td>
           </b-tr>
           <b-tr>
-            <b-td>{{ result.rows[0] != null ? result.rows[0].Tulot.toFixed(2) : 0 }}</b-td>
-            <b-td>{{ result.rows[0] != null ? result.rows[0].Menot.toFixed(2) : 0 }}</b-td>
-            <b-td>{{ (result.rows[0].Tulot + result.rows[0].Menot).toFixed(2) }}</b-td>
+            <b-td>{{
+              totals.rows[0] != null ? totals.rows[0].Tulot.toFixed(2) : 0
+            }}</b-td>
+            <b-td>{{
+              totals.rows[0] != null ? totals.rows[0].Menot.toFixed(2) : 0
+            }}</b-td>
+            <b-td>{{
+              (totals.rows[0].Tulot + totals.rows[0].Menot).toFixed(2)
+            }}</b-td>
+          </b-tr>
+        </b-tbody>
+      </b-table-simple>
+    </div>
+
+    <div class="totalCategory" v-if="totalsCategory">
+      <b-table-simple>
+        <b-tbody>
+          <b-tr>
+            <b-td class="font-weight-bold">Kategoria</b-td>
+            <b-td class="font-weight-bold">Yhteensä</b-td>
+          </b-tr>
+          <b-tr v-for="item in totalsCategory.rows" :key="item.category">
+            <b-td>{{ item.category }} </b-td>
+            <b-td>{{ item.total.toFixed(2) }} </b-td>
           </b-tr>
         </b-tbody>
       </b-table-simple>
@@ -39,16 +60,16 @@ export default {
   data() {
     return {
       dateRange: null,
-      result: null,
+      totals: null,
+      totalsCategory: null,
     };
   },
   methods: {
     async fetchSums() {
       const response = await fetch("http://localhost:3000/gettotals");
-      this.result = await response.json();
+      this.totals = await response.json();
     },
     async sendDate() {
-      console.log(this.dateRange)
       if (this.dateRange && this.dateRange[0] != null) {
         try {
           const response = await fetch("http://localhost:3000/gettotals", {
@@ -63,7 +84,26 @@ export default {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
 
-          this.result = await response.json();
+          this.totals = await response.json();
+
+          const response2 = await fetch(
+            "http://localhost:3000/gettotalsbycategory",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ date: this.dateRange }),
+            }
+          );
+
+          if (!response2.ok) {
+            throw new Error(`HTTP error! status: ${response2.status}`);
+          }
+
+          this.totalsCategory = await response2.json();
+          
+
         } catch (error) {
           console.error(
             "There was a problem with the fetch operation: ",
@@ -81,4 +121,20 @@ export default {
 };
 </script>
 
-<style></style>
+<style>
+.totalAll {
+  width: 50vw;
+}
+.totalCategory {
+  width: 50vw;
+}
+.font-weight-bold {
+  font-size: 1.5em; /* Adjust this value to make the text bigger or smaller */
+}
+body {
+  display: grid;
+  place-items: center;
+  height: 100vh;
+  margin: 0;
+}
+</style>
