@@ -133,8 +133,9 @@ export default {
 }
 body {
   display: grid;
-  place-items: center;
+  place-items: start center;
   height: 100vh;
   margin: 0;
+  padding-top: 20px; /* Adjust this value to create the desired gap */
 }
 </style>
